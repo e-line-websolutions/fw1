@@ -28,6 +28,7 @@ component {
             doTrace = false,
             trace = [ ]
         };
+
         if ( len( getContextRoot() ) ) {
             request._fw1.cgiScriptName = replace( CGI.SCRIPT_NAME, getContextRoot(), '' );
             request._fw1.cgiPathInfo = replace( CGI.PATH_INFO, getContextRoot(), '' );
@@ -1728,12 +1729,14 @@ component {
         if ( !structKeyExists( cfc, '__fw1_version' ) ) {
             // gather up explicit setters as well - except for FW/1 / Application.cfc
             for ( var member in cfc ) {
+              try {
                 var method = cfc[ member ];
                 var n = len( member );
                 if ( isCustomFunction( method ) && left( member, 3 ) == 'set' && n > 3 ) {
                     var property = right( member, n - 3 );
                     setters[ property ] = 'explicit';
                 }
+              } catch ( any e ) {}
             }
         }
         return setters;
@@ -2816,6 +2819,7 @@ component {
         setupFrameworkDefaults();
         if ( !request._fw1.requestDefaultsInitialized ) {
             var pathInfo = request._fw1.cgiPathInfo;
+            var scriptName = getBaseUrl();
             request.base = variables.framework.base;
             request.cfcbase = variables.framework.cfcbase;
 
@@ -2823,13 +2827,14 @@ component {
                 request.context = { };
             }
             // SES URLs by popular request :)
-            if ( len( pathInfo ) > len( request._fw1.cgiScriptName ) && left( pathInfo, len( request._fw1.cgiScriptName ) ) == request._fw1.cgiScriptName ) {
+            if ( len( pathInfo ) > len( scriptName ) && left( pathInfo, len( scriptName ) ) == scriptName ) {
                 // canonicalize for IIS:
-                pathInfo = right( pathInfo, len( pathInfo ) - len( request._fw1.cgiScriptName ) );
-            } else if ( len( pathInfo ) > 0 && pathInfo == left( request._fw1.cgiScriptName, len( pathInfo ) ) ) {
+                pathInfo = right( pathInfo, len( pathInfo ) - len( scriptName ) );
+            } else if ( len( pathInfo ) > 0 && pathInfo == left( scriptName, len( pathInfo ) ) ) {
                 // pathInfo is bogus so ignore it:
                 pathInfo = '';
             }
+
             request._fw1.currentRoute = '';
             var routes = getRoutes();
             if ( arrayLen( routes ) ) {
@@ -2958,7 +2963,7 @@ component {
                 request.action = validateAction( lCase(request.context[ variables.framework.action ]) );
             }
             request._fw1.requestDefaultsInitialized = true;
-        }
+          }
     }
 
     private void function setupRequestWrapper( boolean runSetup ) {

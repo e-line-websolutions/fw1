@@ -610,8 +610,10 @@ component {
             }
             iocMeta.pruned = true;
         }
+
         // gather up explicit setters:
         for ( var member in cfc ) {
+          try {
             var method = cfc[ member ];
             var n = len( member );
             if ( isCustomFunction( method ) && left( member, 3 ) == 'set' && n > 3 ) {
@@ -624,6 +626,8 @@ component {
                     liveMeta.setters[ property ] = 'explicit';
                 }
             }
+          } catch ( any e ) {
+          }
         }
         return liveMeta;
     }
